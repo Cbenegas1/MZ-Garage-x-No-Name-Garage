@@ -31,28 +31,29 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// PRELOADER (APARECE SOLO 1 VEZ POR SESIÓN)
+// PRELOADER SEGURO (CON SESIÓN)
 // ==========================================
 window.addEventListener('load', () => {
     const preloader = document.getElementById('preloader');
     
     if (preloader) {
-        // Verificamos si ya se mostró el preloader en esta pestaña/sesión
-        if (!sessionStorage.getItem('preloaderShown')) {
-            // Si es la primera vez, marcamos que ya se mostró
-            sessionStorage.setItem('preloaderShown', 'true');
-            
-            // Lo mantenemos visible durante 3 segundos y luego lo ocultamos
-            setTimeout(() => {
-                preloader.classList.add('ocultar-preloader');
-                setTimeout(() => {
-                    preloader.style.display = 'none';
-                }, 500); 
-            }, 3000); 
-        } else {
-            // Si ya se había cargado antes en esta sesión, lo ocultamos de inmediato sin animación
-            preloader.style.display = 'none';
+        // Si ya se mostró en esta pestaña, lo removemos de inmediato para que NUNCA se cuelgue
+        if (sessionStorage.getItem('animacionLista') === '1') {
+            preloader.remove();
+            return;
         }
+
+        // Si es la primera vez en la pestaña, marcamos que ya corrió
+        sessionStorage.setItem('animacionLista', '1');
+
+        // Espera 3 segundos y oculta el preloader de forma segura
+        setTimeout(() => {
+            preloader.style.opacity = '0';
+            preloader.style.visibility = 'hidden';
+            setTimeout(() => {
+                preloader.remove(); // Elimina el elemento por completo para que no tape nada
+            }, 500);
+        }, 3000);
     }
 });
 
@@ -102,4 +103,38 @@ function toggleAudio() {
             console.log("Reproducción pausada o bloqueada por restricciones del navegador:", error);
         });
     }
-}
+}// ==========================================
+// CARRUSEL AUTOMÁTICO
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    const track = document.getElementById('projectsTrack');
+    if (!track) return;
+
+    let autoScrollInterval;
+    const scrollAmount = 380 + 30; // Ancho de la tarjeta + espacio (gap)
+
+    // Función que avanza el carrusel
+    function startAutoScroll() {
+        autoScrollInterval = setInterval(() => {
+            // Si llega al final, regresa al inicio (0)
+            if (track.scrollLeft + track.clientWidth >= track.scrollWidth - 10) {
+                track.scrollTo({ left: 0, behavior: 'smooth' });
+            } else {
+                track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            }
+        }, 3000); // 3000ms = 3 segundos (cambia este número si quieres que sea más rápido o lento)
+    }
+
+    // Detener el movimiento automático cuando el usuario ponga el mouse encima
+    track.addEventListener('mouseenter', () => {
+        clearInterval(autoScrollInterval);
+    });
+
+    // Volver a activar el movimiento automático cuando el usuario retire el mouse
+    track.addEventListener('mouseleave', () => {
+        startAutoScroll();
+    });
+
+    // Iniciar el carrusel automático al cargar la página
+    startAutoScroll();
+});
